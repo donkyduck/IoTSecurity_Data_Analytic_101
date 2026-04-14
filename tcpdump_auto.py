@@ -7,7 +7,7 @@ import signal
 import sys
 
 # ================= CONFIG =================
-INTERFACE = "en0"
+INTERFACE = "en9"
 OUTPUT_DIR = os.path.expanduser("~/Downloads/data/pcap")
 ROTATE_SECONDS = 300   # 5 minutes
 SNAPLEN = 0            # full packet capture
@@ -22,7 +22,7 @@ def ensure_output_dir():
 
 def generate_filename():
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    return os.path.join(OUTPUT_DIR, f"capture_{timestamp}.pcap")
+    return os.path.join(OUTPUT_DIR, f"Turn_onff_ELapp_AirPurifier_Sharp_capture_{timestamp}.pcap")
 
 
 def start_tcpdump():
@@ -37,7 +37,7 @@ def start_tcpdump():
         "-s", str(SNAPLEN),
         "-nn",
         "-G", str(ROTATE_SECONDS),
-        "-w", os.path.join(OUTPUT_DIR, "capture_%Y%m%d_%H%M%S.pcap")
+        "-w", os.path.join(OUTPUT_DIR, "Turn_onff_ELapp_AirPurifier_Sharp_capture_%Y%m%d_%H%M%S.pcap")
     ]
 
     print("[INFO] Starting tcpdump...")
