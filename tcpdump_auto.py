@@ -22,7 +22,7 @@ def ensure_output_dir():
 
 def generate_filename():
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename_pcap = f"Nmap_port_scan_capture_{timestamp}.pcap"
+    filename_pcap = f"Nmap_service_discovery_capture_{timestamp}.pcap"
     return os.path.join(OUTPUT_DIR, filename_pcap)
 
 def start_tcpdump():
