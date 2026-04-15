@@ -22,8 +22,8 @@ def ensure_output_dir():
 
 def generate_filename():
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    return os.path.join(OUTPUT_DIR, f"Turn_onff_Python_AirPurifier_Sharp_capture_{timestamp}.pcap")
-
+    filename_pcap = f"Nmap_port_scan_capture_{timestamp}.pcap"
+    return os.path.join(OUTPUT_DIR, filename_pcap)
 
 def start_tcpdump():
     ensure_output_dir()
@@ -31,19 +31,16 @@ def start_tcpdump():
     filename = generate_filename()
 
     cmd = [
-        "sudo",
         "tcpdump",
         "-i", INTERFACE,
         "-s", str(SNAPLEN),
         "-nn",
-        "-G", str(ROTATE_SECONDS),
-        "-w", os.path.join(OUTPUT_DIR, "Turn_onff_Python_AirPurifier_Sharp_capture_%Y%m%d_%H%M%S.pcap")
+        "-w", filename
     ]
 
     print("[INFO] Starting tcpdump...")
     print("[INFO] Interface:", INTERFACE)
-    print("[INFO] Output dir:", OUTPUT_DIR)
-    print("[INFO] Rotate every:", ROTATE_SECONDS, "seconds")
+    print("[INFO] Output file:", filename)
     print()
 
     return subprocess.Popen(cmd)
