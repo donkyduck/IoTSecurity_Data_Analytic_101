@@ -9,7 +9,7 @@ from typing import Optional
 
 ECHONET_PORT = 3610
 DEFAULT_TIMEOUT = 5.0
-INTERVAL = 60  # 1 minutes (60 seconds)
+INTERVAL = 10  # 1 minutes (60 seconds)
 
 @dataclass
 class EchonetConfig:
@@ -146,7 +146,7 @@ def main() -> None:
             power_off_edt=POWER_OFF_EDT,
             on=False,
         )
-        time.sleep(INTERVAL)
+
 
 
 if __name__ == "__main__":

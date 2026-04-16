@@ -34,7 +34,7 @@
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RunManager" selected="Python.upload_pcap">
+  <component name="RunManager" selected="Python.EL_controller_on_off_aircon">
     <configuration name="EL_controller_aircon" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="IoTSecurity_Data_Analytic_101" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -142,8 +142,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.EL_controller_on_off_air_purifier" />
         <item itemvalue="Python.EL_controller_on_off_aircon" />
+        <item itemvalue="Python.EL_controller_on_off_air_purifier" />
         <item itemvalue="Python.tcpdump_auto" />
         <item itemvalue="Python.EL_controller_aircon" />
       </list>

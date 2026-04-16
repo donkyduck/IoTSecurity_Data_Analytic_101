@@ -210,7 +210,7 @@ def main() -> int:
     parser.add_argument(
         "--top",
         type=int,
-        default=30,
+        default=100,
         help="Keep only top N flows by weight (default: 30)",
     )
 
