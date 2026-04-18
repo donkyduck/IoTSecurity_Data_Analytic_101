@@ -56,12 +56,15 @@ clfRandForest = RandomForestClassifier()
 clfRandForest.fit(x_train,y_train)
 predictions = clfRandForest.predict(x_test)
 print_stats_metrics(y_test, predictions)
+
 #######################Decision Tree#######################
 print("#######################Decision Tree#######################")
 clfDT = DecisionTreeRegressor()
 clfDT.fit(x_train,y_train)
 predictions = clfDT.predict(x_test)
 print_stats_metrics(y_test, predictions)
+
+
 #######################Naive Bayes#######################
 print("#######################Naive Bayes#######################")
 clfNB = GaussianNB()
