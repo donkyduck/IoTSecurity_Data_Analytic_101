@@ -1041,7 +1041,10 @@ dropZone.addEventListener('drop', e => {
 });
 
 fileInput.addEventListener('change', e => {
-  if (e.target.files[0]) loadFile(e.target.files[0]);
+  if (e.target.files[0]) {
+    loadFile(e.target.files[0]);
+    e.target.value = '';
+  }
 });
 
 // Demo button — loads mock data without hitting the API
@@ -1060,14 +1063,35 @@ analyzBtn.addEventListener('click', startAnalysis);
 
 function loadFile(file) {
   isDemoMode  = false;
-  currentFile = file;          // store the real File object for FormData
+  currentFile = file;
   fileLoaded  = true;
+
   const mb = (file.size / 1048576).toFixed(2);
+
   document.getElementById('fi-name').textContent   = file.name;
   document.getElementById('fi-size').textContent   = mb + ' MB';
   document.getElementById('fi-status').textContent = 'READY TO ANALYZE';
+  document.getElementById('fi-status').style.color = 'var(--accent)';
+
   fileInfo.classList.add('show');
+
+  // IMPORTANT: remove old inline hiding from previous analysis
   analyzBtn.classList.add('show');
+  analyzBtn.style.display = 'block';
+  analyzBtn.disabled = false;
+  analyzBtn.textContent = 'ANALYZE TRAFFIC';
+
+  // Reset upload area after previous result
+  uploadContent.style.display = 'block';
+  analyzingEl.style.display = 'none';
+  dropZone.classList.remove('analyzing-active');
+
+  uploadContent.querySelector('.upload-title').textContent = 'PCAP file selected';
+  uploadContent.querySelector('.upload-hint').textContent  = 'Click Analyze Traffic to process this file';
+
+  // Optional: hide previous result sections until new analysis completes
+  ['sankey-section','threat-section','proto-section','device-section','alert-section']
+    .forEach(id => document.getElementById(id).classList.remove('show'));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1076,7 +1100,8 @@ function loadFile(file) {
 
 function startAnalysis() {
   if (!fileLoaded) return;
-
+  analyzBtn.disabled          = true;
+  analyzBtn.textContent       = 'ANALYZING...';
   analyzBtn.style.display     = 'none';
   uploadContent.style.display = 'none';
   analyzingEl.style.display   = 'flex';
