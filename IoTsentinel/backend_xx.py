@@ -45,17 +45,15 @@ def analyze():
 
     f = request.files['file']
 
-    # Save to a stable temp path — don't delete inside finally (race condition)
-    tmp_dir  = tempfile.gettempdir()
-    tmp_path = os.path.join(tmp_dir, f'iot_pcap_{os.getpid()}.pcap')
-    f.save(tmp_path)
-    try:
-        packets = rdpcap(tmp_path)
-    except Exception as e:
-        return jsonify({'error': f'Failed to parse PCAP: {str(e)}'}), 400
-    finally:
-        try: os.remove(tmp_path)
-        except: pass
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.pcap') as tmp:
+        f.save(tmp.name)
+        try:
+            packets = rdpcap(tmp.name)
+        except Exception as e:
+            os.unlink(tmp.name)
+            return jsonify({'error': f'Failed to parse PCAP: {str(e)}'}), 400
+        finally:
+            os.unlink(tmp.name)
 
     # Count protocols
     proto_counts = {'TCP': 0, 'UDP': 0, 'ICMP': 0, 'DNS': 0, 'ARP': 0, 'Other': 0}
