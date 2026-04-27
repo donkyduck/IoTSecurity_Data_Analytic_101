@@ -1,0 +1,21 @@
+# Web framework (backend API)
+flask
+flask-cors
+
+# Production server
+gunicorn
+
+# Streamlit frontend
+streamlit
+
+# Data processing
+pandas
+
+# Visualization
+plotly
+
+# PCAP parsing
+scapy
+
+# Optional (recommended for stability)
+python-dotenv
