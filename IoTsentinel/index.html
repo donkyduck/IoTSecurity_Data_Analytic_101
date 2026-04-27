@@ -1036,7 +1036,12 @@ demoBtn.addEventListener('click', () => {
 
 analyzBtn.addEventListener('click', startAnalysis);
 
+let fileLoaded = false;
+let currentFile = null;       // ← ADD THIS LINE at the top
+
 function loadFile(file) {
+  if (file.demo) return;      // skip for demo button
+  currentFile = file;         // ← store the real File object
   const mb = (file.size / 1048576).toFixed(2);
   document.getElementById('fi-name').textContent = file.name;
   document.getElementById('fi-size').textContent = mb + ' MB';
@@ -1068,10 +1073,29 @@ function startAnalysis() {
   let i = 0;
   const iv = setInterval(() => { lbl.textContent = steps[Math.min(i++, steps.length - 1)]; }, 900);
 
-  setTimeout(() => { clearInterval(iv); showResults(); }, 5000);
+  // Build FormData with the actual file
+  const formData = new FormData();
+  formData.append('file', currentFile);   // ← real file object
+
+  fetch('https://ciphercircus.com/api/analyze', {
+    method: 'POST',
+    body: formData
+  })
+  .then(r => {
+    if (!r.ok) throw new Error('Server error: ' + r.status);
+    return r.json();
+  })
+  .then(data => {
+    clearInterval(iv);
+    showResults(data);      // ← pass real data in
+  })
+  .catch(err => {
+    clearInterval(iv);
+    showError(err.message);
+  });
 }
 
-function showResults() {
+function showResults(data) {
   analyzingEl.style.display = 'none';
   dropZone.classList.remove('analyzing-active');
   uploadContent.style.display = 'block';
@@ -1079,22 +1103,33 @@ function showResults() {
   uploadContent.querySelector('.upload-hint').textContent  = 'Upload another file to re-analyze';
   document.getElementById('fi-status').textContent = 'ANALYZED ✓';
 
-  // Animate counters
-  animateValue('stat-packets',  0, 48372, 1200);
-  animateValue('stat-threats',  0, 25,    1000);
-  animateValue('stat-devices',  0, 8,      600);
-  document.getElementById('stat-duration').textContent = '4m 12s';
+  // ── Real stats from backend ──────────────────────────────────────
+  animateValue('stat-packets',  0, data.packets,  1200);
+  animateValue('stat-threats',  0, data.threats,  1000);
+  animateValue('stat-devices',  0, data.devices,   600);
+  document.getElementById('stat-duration').textContent = data.duration || '—';
 
-  // Reveal sections with stagger
+  // ── Reveal sections ──────────────────────────────────────────────
   ['sankey-section','threat-section','proto-section','device-section','alert-section']
     .forEach((id, i) => setTimeout(() => document.getElementById(id).classList.add('show'), 200 + i * 120));
 
-  // Render components
+  // ── Render with real data ────────────────────────────────────────
   setTimeout(() => renderSankey('all', document.querySelector('.sankey-btn')), 350);
-  setTimeout(renderProtocols, 450);
-  setTimeout(renderDevices,   550);
-  setTimeout(renderAlerts,    650);
+  setTimeout(() => renderProtocols(data.protocols), 450);
+  setTimeout(() => renderDevices(data.devices_list), 550);
+  setTimeout(() => renderAlerts(data.alerts), 650);
 }
+
+function showError(msg) {
+  analyzingEl.style.display = 'none';
+  uploadContent.style.display = 'block';
+  dropZone.classList.remove('analyzing-active');
+  document.getElementById('fi-status').textContent = '⚠ ERROR: ' + msg;
+  document.getElementById('fi-status').style.color = 'var(--accent3)';
+  analyzBtn.classList.add('show');
+  analyzBtn.style.display = 'block';
+}
+
 
 function animateValue(id, from, to, ms) {
   const el    = document.getElementById(id);
@@ -1194,9 +1229,22 @@ function renderSankey(filter, btn) {
 // PROTOCOL BARS
 // ═══════════════════════════════════════════════════════════════════════════
 
-function renderProtocols() {
+// Replace the existing renderProtocols() function
+function renderProtocols(protocolData) {
+  // Fall back to mock data if backend didn't return protocols
+  const source = protocolData || PROTOCOLS;
+
+  // If backend returns { TCP: 120, UDP: 40, ... } object, convert it
+  const list = Array.isArray(source)
+    ? source
+    : Object.entries(source).map(([name, count], i) => {
+        const colors = ['#1ea0ff','#00d4aa','#f5a623','#a78bfa','#ff4e6a','#34d399'];
+        const total  = Object.values(source).reduce((a, b) => a + b, 0);
+        return { name, pct: Math.round(count / total * 100), color: colors[i] || '#888' };
+      });
+
   const el = document.getElementById('proto-bars');
-  el.innerHTML = PROTOCOLS.map(p => `
+  el.innerHTML = list.map(p => `
     <div class="proto-row">
       <span class="proto-name">${p.name}</span>
       <div class="proto-track">
@@ -1205,13 +1253,11 @@ function renderProtocols() {
       <span class="proto-pct">${p.pct}%</span>
     </div>`).join('');
 
-  // Animate bars on next frame
   requestAnimationFrame(() => {
-    el.querySelectorAll('.proto-fill').forEach(b => {
-      b.style.width = b.dataset.target + '%';
-    });
+    el.querySelectorAll('.proto-fill').forEach(b => { b.style.width = b.dataset.target + '%'; });
   });
 }
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DEVICE GRID
@@ -1237,9 +1283,13 @@ function renderDevices() {
 // ═══════════════════════════════════════════════════════════════════════════
 // ALERT LOG
 // ═══════════════════════════════════════════════════════════════════════════
-
-function renderAlerts() {
-  document.getElementById('alert-rows').innerHTML = ALERTS.map(a => `
+//--------------------------------------------------==
+// renderAlterts()
+//----------------------------------------------------
+// Replace the existing renderAlerts() function
+function renderAlerts(alertData) {
+  const list = alertData || ALERTS;   // fall back to mock if no real alerts yet
+  document.getElementById('alert-rows').innerHTML = list.map(a => `
     <div class="alert-row">
       <span class="alert-time">${a.time}</span>
       <span class="alert-sev sev-${a.sev}">${a.sev.toUpperCase()}</span>
@@ -1247,7 +1297,6 @@ function renderAlerts() {
       <span class="alert-src">${a.src}</span>
     </div>`).join('');
 }
-
 // ═══════════════════════════════════════════════════════════════════════════
 // TOOLTIP
 // ═══════════════════════════════════════════════════════════════════════════
