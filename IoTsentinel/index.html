@@ -922,6 +922,9 @@
 <script>
 'use strict';
 
+// Flask backend endpoint. If you deploy on another server, replace 127.0.0.1 with that server IP/domain.
+const API_ENDPOINT = 'http://127.0.0.1:5000/api/analyze';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // MOCK DATA
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1006,8 +1009,6 @@ const FLOWS = [
 // UPLOAD / FILE HANDLING
 // ═══════════════════════════════════════════════════════════════════════════
 
-let fileLoaded = false;
-
 const dropZone     = document.getElementById('drop-zone');
 const fileInput    = document.getElementById('file-input');
 const fileInfo     = document.getElementById('file-info');
@@ -1023,6 +1024,13 @@ let currentFile = null;
 let isDemoMode  = false;
 
 // ── Event listeners ─────────────────────────────────────────────────────────
+// Click anywhere in the upload zone to open the file chooser, but do not
+// hijack clicks on the demo/analyze buttons or the file input itself.
+dropZone.addEventListener('click', e => {
+  if (e.target.closest('button') || e.target.closest('label') || e.target === fileInput) return;
+  fileInput.click();
+});
+
 dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop', e => {
@@ -1095,7 +1103,7 @@ function startAnalysis() {
   const formData = new FormData();
   formData.append('file', currentFile);
 
-  fetch('/api/analyze', {          // relative URL — works on any domain
+  fetch(API_ENDPOINT, {          // POST real file to Flask backend
     method: 'POST',
     body: formData
   })

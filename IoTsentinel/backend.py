@@ -6,6 +6,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
+app.config['MAX_CONTENT_LENGTH'] = 256 * 1024 * 1024  # 256 MB upload limit
 
 def detect_threats(packets):
     """Basic threat detection rules."""
@@ -46,9 +47,10 @@ def analyze():
     f = request.files['file']
 
     # Save to a stable temp path — don't delete inside finally (race condition)
-    tmp_dir  = tempfile.gettempdir()
-    tmp_path = os.path.join(tmp_dir, f'iot_pcap_{os.getpid()}.pcap')
-    f.save(tmp_path)
+    suffix = os.path.splitext(f.filename or '')[1].lower() or '.pcap'
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp_path = tmp.name
+        f.save(tmp_path)
     try:
         packets = rdpcap(tmp_path)
     except Exception as e:
@@ -62,19 +64,26 @@ def analyze():
     devices = {}
 
     for pkt in packets:
+        if ARP in pkt:
+            proto_counts['ARP'] += 1
+            src = getattr(pkt[ARP], 'psrc', None)
+            if src:
+                devices[src] = devices.get(src, {'ip': src, 'count': 0})
+                devices[src]['count'] += 1
+            continue
+
         if IP in pkt:
             src = pkt[IP].src
-            dst = pkt[IP].dst
             devices[src] = devices.get(src, {'ip': src, 'count': 0})
             devices[src]['count'] += 1
 
-            if TCP in pkt:        proto_counts['TCP']  += 1
-            elif UDP in pkt:
-                proto_counts['UDP'] += 1
-                if DNS in pkt:    proto_counts['DNS']  += 1
+            if DNS in pkt:        proto_counts['DNS']  += 1
+            elif TCP in pkt:      proto_counts['TCP']  += 1
+            elif UDP in pkt:      proto_counts['UDP']  += 1
             elif ICMP in pkt:     proto_counts['ICMP'] += 1
-            elif ARP in pkt:      proto_counts['ARP']  += 1
             else:                 proto_counts['Other']+= 1
+        else:
+            proto_counts['Other'] += 1
 
     # Build device list for frontend
     device_icons = ['📡','📷','💡','🔒','📱','🌡️','🖥️','📻','🔌','📟']
@@ -103,4 +112,4 @@ def analyze():
     })
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=False)
